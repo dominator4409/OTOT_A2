@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Social Media Usage Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <svg width="960" height="500"></svg>
+    <script>
+        d3.csv("dataset.csv").then(function(data) {
+            data.forEach(d => {
+                d.income = +d.income;
+                d.age = +d.age;
+            });
+
+            const svg = d3.select("svg"),
+                  margin = { top: 20, right: 20, bottom: 30, left: 50 },
+                  width = +svg.attr("width") - margin.left - margin.right,
+                  height = +svg.attr("height") - margin.top - margin.bottom,
+                  g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleLinear()
+                        .domain([10000, d3.max(data, d => d.income)]) // Starts from 9000
+                        .range([0, width]);
+
+            const y = d3.scaleLinear()
+                        .domain(d3.extent(data, d => d.age))
+                        .range([height, 0]);
+
+            const color = d3.scaleOrdinal(d3.schemeCategory10); // Automatically assigns colors
+
+            g.selectAll(".dot")
+             .data(data)
+             .enter().append("circle")
+             .attr("class", "dot")
+             .attr("r", 5)
+             .attr("cx", d => x(d.income))
+             .attr("cy", d => y(d.age))
+             .style("fill", d => color(d.platform)); // Use 'platform' for color coding
+
+            g.append("g")
+             .attr("transform", `translate(0,${height})`)
+             .call(d3.axisBottom(x))
+             .append("text")
+             .attr("fill", "#000")
+             .attr("x", width)
+             .attr("y", -6)
+             .attr("text-anchor", "end")
+             .text("Income");
+
+            g.append("g")
+             .call(d3.axisLeft(y))
+             .append("text")
+             .attr("fill", "#000")
+             .attr("transform", "rotate(-90)")
+             .attr("y", 6)
+             .attr("dy", "0.71em")
+             .attr("text-anchor", "end")
+             .text("Age");
+
+            // Create a legend for the platforms
+            const legend = color.domain().map((platform, i) => ({
+                platform,
+                color: color(platform),
+                y: i * 20
+            }));
+
+            svg.selectAll(".legend")
+               .data(legend)
+               .enter().append("g")
+               .attr("class", "legend")
+               // Adjusted the transform to move the legend inside the visible area
+               .attr("transform", (d, i) => `translate(${width - margin.right - 100},${margin.top + i * 20})`)
+               .each(function(d) {
+                   d3.select(this).append("rect")
+                     .attr("width", 18)
+                     .attr("height", 18)
+                     .style("fill", d.color);
+
+                   d3.select(this).append("text")
+                     .attr("x", 24)
+                     .attr("y", 9)
+                     .attr("dy", ".35em")
+                     .style("text-anchor", "start")
+                     .text(d.platform);
+               });
+        });
+    </script>
+</body>
+</html>
+
+
